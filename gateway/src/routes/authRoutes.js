@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login } = require('../controllers/authController');
+const { register, login, googleAuth, googleCallback } = require('../controllers/authController');
 const validate = require('../middleware/validate');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
 
@@ -43,5 +43,9 @@ router.post('/register', validate(registerSchema), register);
  *       200: { description: JWT returned }
  */
 router.post('/login', validate(loginSchema), login);
+
+// Google OAuth2
+router.get('/google', googleAuth);
+router.get('/google/callback', googleCallback);
 
 module.exports = router;

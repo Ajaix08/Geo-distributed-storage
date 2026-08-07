@@ -9,4 +9,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
   HEALTH_CHECK_INTERVAL_MS: Number(process.env.HEALTH_CHECK_INTERVAL_MS || 10000),
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

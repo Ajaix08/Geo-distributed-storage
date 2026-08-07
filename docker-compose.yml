@@ -38,6 +38,8 @@ services:
       - REGION_NAME=india
       - STORAGE_DIR=/storage/uploads
       - LOG_LEVEL=info
+    env_file:
+      - ./gateway/.env
     volumes:
       - india-storage:/storage/uploads
     networks:
