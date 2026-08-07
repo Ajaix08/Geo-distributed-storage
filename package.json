@@ -1,0 +1,14 @@
+{
+  "name": "geo-distributed-storage",
+  "private": true,
+  "version": "1.0.0",
+  "description": "GeoVault — GeoDistributed File Storage Platform (monorepo root: tooling only)",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.4.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "husky": "^9.1.4"
+  }
+}

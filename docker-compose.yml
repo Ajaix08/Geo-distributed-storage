@@ -1,0 +1,144 @@
+version: '3.9'
+
+networks:
+  geo-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  india-storage:
+  singapore-storage:
+  germany-storage:
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: geo-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - geo-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  india-server:
+    build:
+      context: .
+      dockerfile: services/india-server/Dockerfile
+    container_name: geo-india-server
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - REGION_NAME=india
+      - STORAGE_DIR=/storage/uploads
+      - LOG_LEVEL=info
+    volumes:
+      - india-storage:/storage/uploads
+    networks:
+      - geo-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  singapore-server:
+    build:
+      context: .
+      dockerfile: services/singapore-server/Dockerfile
+    container_name: geo-singapore-server
+    restart: unless-stopped
+    environment:
+      - PORT=5002
+      - REGION_NAME=singapore
+      - STORAGE_DIR=/storage/uploads
+      - LOG_LEVEL=info
+    volumes:
+      - singapore-storage:/storage/uploads
+    networks:
+      - geo-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  germany-server:
+    build:
+      context: .
+      dockerfile: services/germany-server/Dockerfile
+    container_name: geo-germany-server
+    restart: unless-stopped
+    environment:
+      - PORT=5003
+      - REGION_NAME=germany
+      - STORAGE_DIR=/storage/uploads
+      - LOG_LEVEL=info
+    volumes:
+      - germany-storage:/storage/uploads
+    networks:
+      - geo-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: geo-gateway
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/geo_storage
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_EXPIRES_IN=1d
+      - MAX_FILE_SIZE_MB=10
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+      - HEALTH_CHECK_INTERVAL_MS=10000
+      - INDIA_SERVER_URL=http://india-server:5001
+      - SINGAPORE_SERVER_URL=http://singapore-server:5002
+      - GERMANY_SERVER_URL=http://germany-server:5003
+      - LOG_LEVEL=info
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      india-server:
+        condition: service_healthy
+      singapore-server:
+        condition: service_healthy
+      germany-server:
+        condition: service_healthy
+    networks:
+      - geo-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api}
+    container_name: geo-frontend
+    restart: unless-stopped
+    ports:
+      - '5173:80'
+    depends_on:
+      - gateway
+    networks:
+      - geo-network
